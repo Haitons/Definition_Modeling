@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from utils.utils import get_testloader, get_time_dif
 
 parser = argparse.ArgumentParser(description='Pytorch Definition Sequence Model')
-parser.add_argument('--model', type=str, default='GRU',
+parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent network(RNN,LSTM,GRU)')
 parser.add_argument('--emdim', type=int, default=300,
                     help='size of word embeddings')
@@ -35,11 +35,13 @@ parser.add_argument('--batch_size', type=int, default=20,
                     help='batch size')
 parser.add_argument('--dropout', type=float, default=0.0,
                     help='dropout applied to layers(0 = no dropout)')
+parser.add_argument('--wdecay', type=float, default=1.2e-6,
+                    help='weight decay applied to all weights')
 parser.add_argument('--use_i', action='store_true',
                     help='use model I')
 parser.add_argument('--use_h', action='store_true',
                     help='use model H')
-parser.add_argument('use_g', action='store_true',
+parser.add_argument('--use_g', action='store_true',
                     help='use model G')
 parser.add_argument('--tied', action='store_true',
                     help='tie the word embedding and softmax weights')
@@ -51,14 +53,15 @@ parser.add_argument('--use_ch', action='store_true',
                     help='use character level CNN')
 parser.add_argument('--use_he', action='store_true',
                     help='use hypernym embeddings')
+
 args = parser.parse_args()
 args.tied = False
 
 args.use_ch = True
 args.use_he = True
 args.use_i = False
-args.use_h = False
-args.use_g = True
+args.use_h = True
+args.use_g = False
 
 CHAR_EMB_DIM = 20
 CHAR_HID_DIM = 20
@@ -134,7 +137,7 @@ def train():
     print('=============== end =================')
     loss_fn = nn.CrossEntropyLoss(ignore_index=0)
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = torch.optim.Adam(parameters, args.lr)
+    optimizer = torch.optim.Adam(parameters, args.lr,weight_decay=args.wdecay)
     print('Training and evaluating...')
     start_time = time.time()
     if not os.path.exists(model_save_dir):
